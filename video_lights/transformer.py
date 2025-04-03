@@ -59,10 +59,10 @@ def gen_sineembed_for_position(pos_tensor):
 
 class VLTransformer(nn.Module):
 
-    def __init__(self, d_model=512, nhead=8, num_queries=2, num_bicmf_layers=2, num_encoder_layers=6,
+    def __init__(self, d_model=512, nhead=8, num_queries=10, num_bicmf_layers=2, num_encoder_layers=6,
                  num_decoder_layers=6, dim_feedforward=2048, dropout=0.1,
                  activation="relu", normalize_before=False,
-                 return_intermediate_dec=False, query_dim=2,
+                 return_intermediate_dec=False, query_dim=256,
                  keep_query_pos=False, query_scale_type='cond_elewise',
                  num_patterns=0,
                  modulate_t_attn=True,
@@ -238,7 +238,8 @@ class TransformerDecoder(nn.Module):
         if bbox_embed_diff_each_layer:
             self.bbox_embed = nn.ModuleList([MLP(d_model, d_model, 2, 3) for i in range(num_layers)])
         else:
-            self.bbox_embed = MLP(d_model, d_model, 2, 3)
+            self.bbox_embed = MLP(d_model, d_model, query_dim, 3)
+
         # init bbox_embed
         if bbox_embed_diff_each_layer:
             for bbox_embed in self.bbox_embed:
@@ -941,9 +942,9 @@ def build_transformer(args):
     return VLTransformer(
         d_model=args.hidden_dim,
         dropout=args.dropout,
+        num_queries= args.num_queries,
         nhead=args.nheads,
         dim_feedforward=args.dim_feedforward,
-        num_bicmf_layers=args.bicmf_layers,
         num_encoder_layers=args.enc_layers,
         num_decoder_layers=args.dec_layers,
         normalize_before=args.pre_norm,

@@ -1,22 +1,33 @@
 import torch
-from video_lights.model import build_transformer, build_position_encoding, VideoLiMo
-
+from video_lights.model import build_transformer, build_position_encoding, VideoLight
 
 def build_inference_model(ckpt_path, **kwargs):
     ckpt = torch.load(ckpt_path, map_location="cpu")
     args = ckpt["opt"]
-    if len(kwargs) > 0:  # used to overwrite default args
+
+
+    if "query_embed.weight" in ckpt["model"]:
+        query_embed_shape = ckpt["model"]["query_embed.weight"].shape
+        args.num_queries = query_embed_shape[0]  # Number of queries from checkpoint
+
+        print(f"Query embed shape: {query_embed_shape[0]}, num_queries: {args.num_queries}")
+
+    if len(kwargs) > 0:  # Used to overwrite default args
         args.update(kwargs)
+
+    # Build transformer and position encoding
     transformer = build_transformer(args)
     position_embedding, txt_position_embedding = build_position_encoding(args)
 
-    model = VideoLiMo(
+
+
+    model = VideoLight(
         transformer,
         position_embedding,
         txt_position_embedding,
         txt_dim=args.t_feat_dim,
         vid_dim=args.v_feat_dim,
-        aud_dim=args.a_feat_dim,
+
         num_queries=args.num_queries,
         input_dropout=args.input_dropout,
         aux_loss=args.aux_loss,
@@ -27,7 +38,6 @@ def build_inference_model(ckpt_path, **kwargs):
         n_input_proj=args.n_input_proj,
     )
 
-    model.load_state_dict(ckpt["model"])
+    # Load state_dict with strict=False to allow for size mismatches in keys
+    model.load_state_dict(ckpt["model"], strict=False)
     return model
-
-

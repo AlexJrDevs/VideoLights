@@ -67,7 +67,7 @@ class VideoLight(nn.Module):
         self.n_input_proj = n_input_proj
         # self.foreground_thd = foreground_thd
         # self.background_thd = background_thd
-        self.query_embed = nn.Embedding(num_queries, 2)
+        self.query_embed = nn.Embedding(num_queries, hidden_dim)
         relu_args = [True] * 3
         relu_args[n_input_proj - 1] = False
         self.fra = fra
@@ -183,8 +183,10 @@ class VideoLight(nn.Module):
         hs, reference, memory, memory_global = self.transformer(src, ~mask, self.query_embed.weight, pos,
                                                                 video_length=video_length)
         outputs_class = self.class_embed(hs)  # (#layers, batch_size, #queries, #classes)
-        reference_before_sigmoid = inverse_sigmoid(reference)
+        reference_before_sigmoid = inverse_sigmoid(reference[..., :2])
         tmp = self.span_embed(hs)
+        print("tmp shape:", tmp.shape)
+        print("reference_before_sigmoid shape:", reference_before_sigmoid.shape)
         outputs_coord = tmp + reference_before_sigmoid
         if self.span_loss_type == "l1":
             outputs_coord = outputs_coord.sigmoid()

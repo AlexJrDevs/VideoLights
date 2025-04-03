@@ -2,6 +2,7 @@ import gzip
 import html
 import os
 from functools import lru_cache
+import urllib.request
 
 import ftfy
 import regex as re
@@ -34,6 +35,16 @@ def bytes_to_unicode():
     cs = [chr(n) for n in cs]
     return dict(zip(bs, cs))
 
+def download_vocab():
+    vocab_url = "https://openaipublic.azureedge.net/clip/bpe_simple_vocab_16e6.txt.gz"
+    vocab_path = os.path.join(os.path.dirname(__file__), "bpe_simple_vocab_16e6.txt.gz")
+    
+    if not os.path.exists(vocab_path):
+        print("Downloading CLIP vocabulary file...")
+        os.makedirs(os.path.dirname(vocab_path), exist_ok=True)
+        urllib.request.urlretrieve(vocab_url, vocab_path)
+        print("Downloaded vocabulary file to:", vocab_path)
+
 
 def get_pairs(word):
     """Return set of symbol pairs in a word.
@@ -61,6 +72,7 @@ def whitespace_clean(text):
 
 class SimpleTokenizer(object):
     def __init__(self, bpe_path: str = default_bpe()):
+        download_vocab()
         self.byte_encoder = bytes_to_unicode()
         self.byte_decoder = {v: k for k, v in self.byte_encoder.items()}
         merges = gzip.open(bpe_path).read().decode("utf-8").split('\n')

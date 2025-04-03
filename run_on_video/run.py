@@ -1,4 +1,4 @@
-import torch
+import torch, os
 
 from run_on_video.data_utils import ClipFeatureExtractor
 from run_on_video.model_utils import build_inference_model
@@ -7,6 +7,8 @@ from video_lights.span_utils import span_cxw_to_xx
 from utils.basic_utils import l2_normalize_np_array
 import torch.nn.functional as F
 import numpy as np
+
+from utils.basic_utils import load_jsonl
 
 
 class MomentDETRPredictor:
@@ -88,13 +90,14 @@ class MomentDETRPredictor:
 
 
 def run_example():
+    print("Current working directory:", os.getcwd())
+
     # load example data
-    from utils.basic_utils import load_jsonl
-    video_path = "example/RoripwjYFp8_60.0_210.0.mp4"
-    query_path = "example/queries.jsonl"
+    video_path = "run_on_video/example/RoripwjYFp8_60.0_210.0.mp4"
+    query_path = "run_on_video/example/queries.jsonl"
     queries = load_jsonl(query_path)
     query_text_list = [e["query"] for e in queries]
-    ckpt_path = "moment_detr_ckpt/model_best.ckpt"
+    ckpt_path = "run_on_video/moment_detr_ckpt/model_best.ckpt"
 
     # run predictions
     print("Build models...")
